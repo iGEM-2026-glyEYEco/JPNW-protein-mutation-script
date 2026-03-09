@@ -46,4 +46,9 @@ def generate_mutations(input_file_name, input_positions, output_file_name):
 
 
 if __name__ == "__main__":
-    generate_mutations("scaffold_0.fasta", [1], "mutants_test.fasta")
+    # Change inputs if needed
+    input_file_name = "scaffold_0.fasta"
+    output_file_name = "mutants_test.fasta"
+    positions = [1]  # List of positions to mutate (1-based indexing)
+
+    generate_mutations(input_file_name, positions, output_file_name)
