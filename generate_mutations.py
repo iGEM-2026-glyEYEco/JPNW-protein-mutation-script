@@ -178,7 +178,7 @@ def rename_foldx_outputs(individual_list_file, foldx_output_dir, pdb_base_name):
 if __name__ == "__main__":
     # ----- CHANGE INPUTS BELOW IF NEEDED -----
     input_file_name = "./test_inputs/scaffold_0.fasta"
-    output_file_name = "../foldxMac/individual_list.txt"
+    output_file_name = "./foldxMac/individual_list.txt"
 
     positions = [144]  # List of positions to mutate (1-based indexing)
     chain = "A"            # PDB chain identifier
@@ -202,6 +202,6 @@ if __name__ == "__main__":
     #
     rename_foldx_outputs(
          individual_list_file = output_file_name,   # same file written above
-         foldx_output_dir     = "../foldxMac",       # directory where FoldX wrote its outputs
+         foldx_output_dir     = "./foldxMac",       # directory where FoldX wrote its outputs
          pdb_base_name        = "1A3K_Repair",       # base name FoldX used, e.g. "1A3K_Repair"
     )
