@@ -177,10 +177,10 @@ def rename_foldx_outputs(individual_list_file, foldx_output_dir, pdb_base_name):
 
 if __name__ == "__main__":
     # ----- CHANGE INPUTS BELOW IF NEEDED -----
-    input_file_name = "./test_inputs/scaffold_0.fasta"
-    output_file_name = "./foldxMac/individual_list.txt"
+    input_file_name = "./fasta_inputs/galectin3.fasta"
+    output_file_name = "./foldx_inputs/individual_list_set1.txt"  # File name Must begin with individual_list
 
-    positions = [144]  # List of positions to mutate (1-based indexing)
+    positions = [46, 48, 50, 62, 69, 72]  # List of positions to mutate (1-based indexing)
     chain = "A"            # PDB chain identifier
     pdb_offset = 0         # Add to sequence position to get PDB residue number
     max_mutations = None   # Optional: Maximum number of positions allowed to be mutated (set to None to allow all mutations)
@@ -188,7 +188,12 @@ if __name__ == "__main__":
     # Optional: specify amino acid options for specific positions (set to None to use all 20 amino acids for all positions)
     # For any position not specified in position_mutation_options, the default amino acid options (all 20 amino acids) will be used.
     position_mutation_options = {
-        144: list("ACDEFGHIKLMNPQRSTVWY"),  # Position 1 can mutate to any amino acid
+        46: ['H', 'R', 'A'],
+        48: ['N', 'W', 'R', 'A'],
+        50: ['R', 'C', 'H', 'A'],
+        62: ['N', 'A'],
+        69: ['W', 'A'],
+        72: ['E', 'A']
     }
         
     
@@ -200,8 +205,8 @@ if __name__ == "__main__":
     # Uncomment and fill in the values below to rename PDB outputs and
     # annotate .fxout files with human-readable mutation names.
     #
-    rename_foldx_outputs(
-         individual_list_file = output_file_name,   # same file written above
-         foldx_output_dir     = "./foldxMac",       # directory where FoldX wrote its outputs
-         pdb_base_name        = "1A3K_Repair",       # base name FoldX used, e.g. "1A3K_Repair"
-    )
+    # rename_foldx_outputs(
+    #     individual_list_file = output_file_name,   # same file written above
+    #     foldx_output_dir     = "./foldx_outputs/set1/",       # directory where FoldX wrote its outputs
+    #     pdb_base_name        = "scaffold_galectin3_Repair",       # base name FoldX used, e.g. "1A3K_Repair"
+    # )
