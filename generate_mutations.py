@@ -18,8 +18,8 @@ def generate_mutations(input_file_name, input_positions, output_file_name, max_m
 
     Outputs:
     - A FoldX individual_list.txt file where each line encodes one variant.
-      Format: <WT_residue><chain><PDB_number><mutant_residue>,...;
-      e.g. single: RA144G;   combinatorial: RA144G,KB78R;
+        Format: <WT_residue><chain><PDB_number><mutant_residue>,...;
+        e.g. single: RA144G;   combinatorial: RA144G,KB78R;
     """
     positions = [position - 1 for position in input_positions]  # Convert to 0-based indexing
     amino_acids = list("ACDEFGHIKLMNPQRSTVWY")
@@ -102,12 +102,9 @@ def rename_foldx_outputs(individual_list_file, foldx_output_dir, pdb_base_name):
 
     After running FoldX BuildModel, outputs are numbered sequentially
     (e.g. 1A3K_Repair_1.pdb, 1A3K_Repair_2.pdb ...). This function:
-      1. Reads individual_list.txt to build a list of mutation names
-      2. Renames each PDB output file to include the mutation name
-         (1A3K_Repair_1.pdb  →  1A3K_Repair_N143A.pdb)
-      3. Adds a MutationName column to every .fxout file so each row is
-         labelled with the actual mutation instead of just a number.
-
+        1. Reads individual_list.txt to build a list of mutation names
+        2. Renames each PDB output file to include the mutation name (1A3K_Repair_1.pdb  →  1A3K_Repair_N143A.pdb)
+        3. Adds a MutationName column to every .fxout file so each row is labelled with the actual mutation instead of just a number.
     """
     # --- Read and parse individual_list.txt ---------------------------------
     with open(individual_list_file) as f:
@@ -175,38 +172,157 @@ def rename_foldx_outputs(individual_list_file, foldx_output_dir, pdb_base_name):
     print(f".fxout files annotated: {annotated_fxout}")
 
 
-if __name__ == "__main__":
-    # ----- CHANGE INPUTS BELOW IF NEEDED -----
-    input_file_name = "./fasta_inputs/galectin3.fasta"
-    output_file_name = "./foldx_inputs/individual_list_set1.txt"  # File name Must begin with individual_list
+def split_individual_list(input_file, output_dir,batch_size=100):
+    """
+    Splits a FoldX individual_list file into smaller batch files.
 
-    positions = [46, 48, 50, 62, 69, 72]  # List of positions to mutate (1-based indexing)
+    Parameters:
+    - input_file: Path to the FoldX individual_list file
+    - output_dir: Directory where the batch files will be saved
+    - batch_size: Number of lines (mutants) per batch file
+    """
+    os.makedirs(output_dir, exist_ok=True)
+
+    with open(input_file) as f:
+        lines = [line for line in f if line.strip()]
+
+    # Get base filename without extension
+    base_name = os.path.splitext(os.path.basename(input_file))[0]
+
+    batch_files = []
+
+    for i in range(0, len(lines), batch_size):
+        batch_num = i // batch_size + 1
+
+        batch_filename = os.path.join(
+            output_dir,
+            f"{base_name}_batch_{batch_num:03d}.txt"
+        )
+
+        with open(batch_filename, "w") as out:
+            out.writelines(lines[i:i + batch_size])
+
+        batch_files.append(batch_filename)
+
+    print(f"Created {len(batch_files)} batch files")
+    for bf in batch_files:
+        print(f"  {bf}")
+    
+    return batch_files
+
+
+def merge_pdbs(batch_dirs, merged_dir):
+    """
+    Merges PDB files from multiple batch directories into a single directory.
+    Skips WT files and duplicates.
+
+    Parameters:
+    - batch_dirs: List of batch directories containing PDB outputs
+    - merged_dir: Directory where merged PDB files will be saved
+    """
+    os.makedirs(merged_dir, exist_ok=True)
+
+    copied = 0
+
+    for batch_dir in batch_dirs:
+        for fname in os.listdir(batch_dir):
+            if fname.startswith("WT_"):
+                continue
+
+            if not fname.endswith(".pdb"):
+                continue
+
+            src = os.path.join(batch_dir, fname)
+            dst = os.path.join(merged_dir, fname)
+
+            if os.path.exists(dst):
+                print(f"Duplicate skipped: {fname}")
+                continue
+
+            shutil.copy2(src, dst)
+            copied += 1
+
+    print(f"Copied {copied} mutant PDB files")
+
+
+if __name__ == "__main__":
+    # ------------------------------------------------------------------
+    # 1. CHANGE INPUTS IF NEEDED
+    # ------------------------------------------------------------------
+
+    input_file_name = "./fasta_inputs/galectin3.fasta"
+    output_file_name = "./foldx_inputs/individual_list_set5.txt"  # File name Must begin with individual_list
+
+    positions = [52, 53]  # List of positions to mutate (1-based indexing)
     chain = "A"            # PDB chain identifier
     pdb_offset = 0         # Add to sequence position to get PDB residue number
     max_mutations = None   # Optional: Maximum number of positions allowed to be mutated (set to None to allow all mutations)
 
     # Optional: specify amino acid options for specific positions (set to None to use all 20 amino acids for all positions)
     # For any position not specified in position_mutation_options, the default amino acid options (all 20 amino acids) will be used.
-    position_mutation_options = {
-        46: ['H', 'R', 'A'],
-        48: ['N', 'W', 'R', 'A'],
-        50: ['R', 'C', 'H', 'A'],
-        62: ['N', 'A'],
-        69: ['W', 'A'],
-        72: ['E', 'A']
-    }
-        
-    
-    # -----------------------------------------
+    position_mutation_options = None   
 
+
+
+    # ------------------------------------------------------------------
+    # 2. GENERATE MUTATIONS (write individual_list file for FoldX)
+    # Uncomment the line below to run.
+    # Once finished, then comment it out again.
+    # ------------------------------------------------------------------
     generate_mutations(input_file_name, positions, output_file_name, max_mutations, position_mutation_options, chain, pdb_offset)
+    
 
-    # ----- OPTIONAL: run AFTER FoldX BuildModel has finished -----
-    # Uncomment and fill in the values below to rename PDB outputs and
-    # annotate .fxout files with human-readable mutation names.
-    #
+
+    # ------------------------------------------------------------------
+    # 3. Run FoldX BuildModel in your terminal using the generated individual_list.txt file(s). 
+    # This will produce PDB outputs and .fxout files in the specified output directory
+    # ------------------------------------------------------------------
+
+
+
+    # ------------------------------------------------------------------
+    # 4. Optional: If you have many mutants, split the individual_list.txt into smaller batches for FoldX. 
+    # Uncomment the line below and modify any parameters if needed. 
+    # Once finished, comment it out again.
+    # ------------------------------------------------------------------
+    # batch_files = split_individual_list(output_file_name, output_dir="./foldx_inputs/set5/", batch_size=100)
+
+
+
+    # ------------------------------------------------------------------
+    # 5. Optional: run AFTER FoldX BuildModel has finished
+    # Uncomment and fill in the values below to rename PDB outputs and annotate .fxout files with human-readable mutation names.
+    # Once finished, comment it out again.
+    # ------------------------------------------------------------------
+
+    # *** IF YOU DID NOT PERFORM STEP 4 (NO BATCHES)
     # rename_foldx_outputs(
-    #     individual_list_file = output_file_name,   # same file written above
-    #     foldx_output_dir     = "./foldx_outputs/set1/",       # directory where FoldX wrote its outputs
+    #     individual_list_file = "./foldx_inputs/set5/individual_list_set5_batch_002.txt",
+    #     foldx_output_dir     = "./foldx_outputs/set5/batch_002",       # directory where FoldX wrote its outputs
     #     pdb_base_name        = "scaffold_galectin3_Repair",       # base name FoldX used, e.g. "1A3K_Repair"
+    # )
+
+    # *** IF YOU PERFORMED STEP 4 (IF YOU HAVE MULTIPLE BATCHES):
+    # for batch_num in range(1, 5):
+    #     rename_foldx_outputs(
+    #         individual_list_file=f"./foldx_inputs/set5/individual_list_set5_batch_{batch_num:03d}.txt",
+    #         foldx_output_dir=f"./foldx_outputs/set5/batch_{batch_num:03d}",
+    #         pdb_base_name="scaffold_galectin3_Repair"
+    # )
+
+
+
+    # ------------------------------------------------------------------
+    # 6. Optional: If you split into batches (performed step 4), uncomment the code below to merge the renamed PDB outputs from all batches into a single directory.
+    # Change any parameters if needed.
+    # One finished, comment it out again.
+    # ------------------------------------------------------------------
+    # merge_pdbs(
+    #     batch_dirs=[
+    #         "./foldx_outputs/set5/batch_001",
+    #         "./foldx_outputs/set5/batch_002",
+    #         "./foldx_outputs/set5/batch_003",
+    #         "./foldx_outputs/set5/batch_004",
+    #     ],
+    #     merged_dir="./foldx_outputs/set5/merged"
     # )
