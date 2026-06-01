@@ -274,18 +274,18 @@ if __name__ == "__main__":
 
 
     # ------------------------------------------------------------------
-    # 3. Run FoldX BuildModel in your terminal using the generated individual_list.txt file(s). 
-    # This will produce PDB outputs and .fxout files in the specified output directory
-    # ------------------------------------------------------------------
-
-
-
-    # ------------------------------------------------------------------
-    # 4. Optional: If you have many mutants, split the individual_list.txt into smaller batches for FoldX. 
+    # 3. Optional: If you have many mutants, split the individual_list.txt into smaller batches for FoldX. 
     # Uncomment the line below and modify any parameters if needed. 
     # Once finished, comment it out again.
     # ------------------------------------------------------------------
     # batch_files = split_individual_list(output_file_name, output_dir="./foldx_inputs/set5/", batch_size=100)
+
+
+
+    # ------------------------------------------------------------------
+    # 4. Run FoldX BuildModel in your terminal using the generated individual_list.txt file(s). 
+    # This will produce PDB outputs and .fxout files in the specified output directory
+    # ------------------------------------------------------------------
 
 
 
